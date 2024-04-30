@@ -1,3 +1,112 @@
+# code for the curve fit of pulses
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.optimize import curve_fit
+
+
+ig = [1e-6,100,0.1,1000]
+
+def P_0(t, p0, v, D, tau):
+    x = 225e-6
+    return (p_0 * np.exp((-(x - v * t)**2) / (4 * D * t) - t / tau)) / (2 * np.sqrt(np.pi * D * t))
+
+a = 4200 #change the range
+b = 5100
+
+# change the file name vvv
+
+df = pd.read_csv("HS50_8.csv",skiprows=12,names=['time','Efield','C1','C2','C3'])[a:b]
+
+print(f"v_p = {225e-6/df.loc[df['C1'].idxmax(), 'time']}")
+
+
+x_data = df['time']
+y_data = df['C1']
+
+
+popt, pcov = curve_fit(custom_function, x_data, y_data, method = 'dogbox',p0=ig)
+
+p_0_opt, v_opt, D_opt, tau_opt = popt
+
+y_fit = custom_function(x_data, p_0_opt, v_opt, D_opt, tau_opt)
+
+plt.figure(figsize=(6, 4))
+plt.rcParams['font.size'] = 15
+plt.plot(x_data*1000000, y_data*1000)
+plt.plot(x_data*1000000, y_fit*1000, 'r-')
+
+plt.xlabel('Time / $\mu$s', fontsize = 15)
+plt.ylabel('Voltage / mV', fontsize = 15)
+
+plt.savefig("Temp23_4V_C1")
+
+plt.show()
+
+print("Optimized Parameters:")
+print("f0 =", p_0_opt)
+print("v =", v_opt)
+print("D =", D_opt)
+print("tau =", tau_opt)
+
+
+
+
+
+
+#code to get graphs of mobility, recombination or diffusion constant against voltage
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from scipy.optimize import curve_fit
+
+df = pd.read_excel("Curve_Fit_Results.xlsx",usecols=['voltage','Diffusion coeff','mobility','recomb time'])
+
+plt.figure(figsize=(8, 6))
+plt.rcParams['font.size'] = 13
+
+def plot_index(start, end, temp, col, marker):
+    
+    x = df['voltage'][start:end]
+    y = df['mobility'][start:end] * 10000
+    
+    # to avoid repeated code
+    plt.plot(
+        x,
+        y,
+        col,
+        label=f'T={temp}°C',
+        linestyle = 'none',
+        marker = marker,
+        markerfacecolor = 'none',
+        markersize = 5
+    )
+    
+    # add line of best fit
+    m, b = np.polyfit(x, y, 1)
+    plt.plot(x, x*m + b, col)
+
+plt.rcParams['font.size'] = 17    
+plot_index(0, 6, 23, "b", 'x')
+plot_index(7, 13, 40, "g", 's')
+plot_index(14, 20, 50, "r", '^')
+plot_index(21, 28, 60, "m" , 'o')
+
+
+plt.xlabel('Voltage / V', fontsize = 17)
+plt.ylabel('$\mu$ / cm$^{2}$V$^{-1}$s$^{-1}$', fontsize = 17)
+plt.legend()
+
+plt.savefig("Mobility.png",dpi=300)
+
+plt.show()
+
+
+
+
+
+
+#code for simulation of voltage against time
 import numpy as np
 import matplotlib.pyplot as plt
 
